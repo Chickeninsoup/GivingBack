@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -14,6 +15,23 @@ using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves;
 
 namespace GivingBack.GivingBackCode.Patches;
+
+/// <summary>
+/// 记录每场战斗开始时塞入的 Wither 总数（以 Player 为 key）。
+/// 用于强化回合补回被 Transform 消耗的 Wither。
+/// </summary>
+internal static class WitherTotalTracker
+{
+    private static readonly ConditionalWeakTable<Player, State> Table = new();
+
+    public static void SetTotal(Player player, int total) =>
+        Table.GetOrCreateValue(player).Total = total;
+
+    public static int GetTotal(Player player) =>
+        Table.TryGetValue(player, out var s) ? s.Total : 0;
+
+    internal sealed class State { public int Total; }
+}
 
 /// <summary>
 /// 战斗开始时，向抽牌堆底部塞入 floor(卡组大小 / 5) 张 Wither。
@@ -42,6 +60,10 @@ public static class AeonglassCombatStartWitherPatch
         await CardPileCmd.AddToCombatAndPreview<Wither>(
             power.Target, PileType.Draw, count, (Player?)null, CardPilePosition.Bottom);
         power.Flash();
+
+        // 记录开局 Wither 总数，供强化回合补全使用
+        if (power.Target.Player != null)
+            WitherTotalTracker.SetTotal(power.Target.Player, count);
     }
 }
 
@@ -126,7 +148,7 @@ public static class AeonglassIncreasingIntensityPatch
         }
         instance.WitherUpgradeCount++;
 
-        // 新行为：将弃牌堆 / 消耗堆的 Wither 随机洗回抽牌堆（不塞新 Wither）
+        // 新行为：将弃牌堆 / 消耗堆的 Wither 随机洗回抽牌堆
         var player = targets.Select(t => t.Player).FirstOrDefault(p => p != null);
         if (player != null)
         {
@@ -138,7 +160,44 @@ public static class AeonglassIncreasingIntensityPatch
                     await CardPileCmd.Add(wither, PileType.Draw, CardPilePosition.Random, null, false);
             }
 
-            // 所有 Wither 伤害 +3（含刚移回的）
+            // 补回被 Transform 消耗的 Wither
+            var totalTracked = WitherTotalTracker.GetTotal(player);
+            if (totalTracked > 0)
+            {
+                var allPiles = new[] { PileType.Draw, PileType.Hand, PileType.Discard, PileType.Exhaust };
+                var currentCount = allPiles.Sum(pt => CardPile.Get(pt, player)?.Cards.OfType<Wither>().Count() ?? 0);
+                var missing = totalTracked - currentCount;
+
+                if (missing > 0)
+                {
+                    var playerCreature = targets.FirstOrDefault(t => t.Player != null);
+                    if (playerCreature != null)
+                    {
+                        // 记录补充前抽牌堆里已有的 Wither，用于识别新生成的
+                        var drawBefore = CardPile.Get(PileType.Draw, player)?.Cards.OfType<Wither>().ToHashSet()
+                                         ?? new HashSet<Wither>();
+
+                        await CardPileCmd.AddToCombatAndPreview<Wither>(
+                            playerCreature, PileType.Draw, missing, (Player?)null, CardPilePosition.Random);
+
+                        // 新 Wither 追平到上一轮结束时的 bonus 水平（3*(N-1)），
+                        // 通用 +3 会在后面将它们补到与其他 Wither 一致的 3*N
+                        var catchUpBonus = 3m * (instance.WitherUpgradeCount - 1);
+                        if (catchUpBonus > 0)
+                        {
+                            var drawAfter = CardPile.Get(PileType.Draw, player)?.Cards.OfType<Wither>()
+                                            ?? Enumerable.Empty<Wither>();
+                            foreach (var w in drawAfter.Where(w => !drawBefore.Contains(w)).ToList())
+                            {
+                                WitherBonusDamageTracker.AddBonus(w, catchUpBonus);
+                                w.DynamicVars["Damage"].BaseValue += catchUpBonus;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 所有 Wither 伤害 +3（含刚移回的和刚补充的）
             foreach (var pileType in new[] { PileType.Draw, PileType.Hand, PileType.Discard })
             {
                 var pile = CardPile.Get(pileType, player);
@@ -154,5 +213,35 @@ public static class AeonglassIncreasingIntensityPatch
         // 原版：对自身施加 StrengthPower，递增 AdditionalStrength
         await PowerCmd.Apply<StrengthPower>(new ThrowingPlayerChoiceContext(), instance.Creature, instance.IncreasingIntensityTotalStrength, instance.Creature, null);
         instance.AdditionalStrength++;
+    }
+}
+
+/// <summary>
+/// 第 1、4、7、10…回合（玩家回合开始时），将弃牌堆中所有 Wither 随机洗回抽牌堆。
+/// 条件：(TurnNumber - 1) % 3 == 0
+/// </summary>
+[HarmonyPatch(typeof(AbstractModel), "AfterPlayerTurnStart")]
+public static class AeonglassDiscardShufflePatch
+{
+    static void Postfix(AbstractModel __instance, PlayerChoiceContext choiceContext, Player player, ref Task __result)
+    {
+        if (__instance is not Aeonglass) return;
+
+        var turnNumber = player.PlayerCombatState?.TurnNumber ?? 0;
+        if ((turnNumber - 1) % 3 != 0) return;
+
+        var prev = __result;
+        __result = ShuffleWithersFromDiscard(prev, player);
+    }
+
+    static async Task ShuffleWithersFromDiscard(Task prev, Player player)
+    {
+        await prev;
+
+        var discard = CardPile.Get(PileType.Discard, player);
+        if (discard == null) return;
+
+        foreach (var wither in discard.Cards.OfType<Wither>().ToList())
+            await CardPileCmd.Add(wither, PileType.Draw, CardPilePosition.Random, null, false);
     }
 }

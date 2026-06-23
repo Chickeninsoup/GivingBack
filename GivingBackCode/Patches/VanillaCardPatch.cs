@@ -70,12 +70,12 @@ public static class VanillaCardPatch
             frKeywords?.Remove(CardKeyword.Exhaust);
         }
 
-        // 枯萎 (Wither)：CardType -> Skill，移除 CardKeyword.Unplayable，费用改为 1
-        // CardType.Unplayable + CardKeyword.Unplayable 双重拦截，需同时处理
+        // 枯萎 (Wither)：CardType 保持 Status，移除 CardKeyword.Unplayable，费用改为 1
+        // CardKeyword.Unplayable 双重拦截需移除，使其可主动打出
         var wither = ModelDb.AllCards.OfType<Wither>().FirstOrDefault();
         if (wither != null)
         {
-            CardTypeField.SetValue(wither, CardType.Skill);
+            CardTypeField.SetValue(wither, CardType.Status);
             var witherKeywordsField = AccessTools.Field(typeof(CardModel), "_keywords");
             var witherKeywords = witherKeywordsField?.GetValue(wither) as HashSet<CardKeyword>;
             witherKeywords?.Remove(CardKeyword.Unplayable);
