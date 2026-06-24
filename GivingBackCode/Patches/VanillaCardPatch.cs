@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -59,15 +61,6 @@ public static class VanillaCardPatch
                 stoneArmor.DynamicVars["PlatingPower"].BaseValue = 5m;
             else
                 MainFile.Logger.Error($"StoneArmor DynamicVars keys: {string.Join(", ", stoneArmor.DynamicVars.Keys)}");
-        }
-
-        // 遗忘仪式 (ForgottenRitual)：去除 Exhaust 关键字
-        var forgottenRitual = ModelDb.AllCards.OfType<ForgottenRitual>().FirstOrDefault();
-        if (forgottenRitual != null)
-        {
-            var frKeywordsField = AccessTools.Field(typeof(CardModel), "_keywords");
-            var frKeywords = frKeywordsField?.GetValue(forgottenRitual) as HashSet<CardKeyword>;
-            frKeywords?.Remove(CardKeyword.Exhaust);
         }
 
         // 枯萎 (Wither)：CardType 保持 Status，移除 CardKeyword.Unplayable，费用改为 1
@@ -216,6 +209,16 @@ public static class VanillaCardPatch
             syncKw?.Remove(CardKeyword.Exhaust);
         }
 
+        // Hand Trick（幻手）：费用改为 0
+        var handTrick = ModelDb.AllCards.OfType<HandTrick>().FirstOrDefault();
+        if (handTrick != null)
+        {
+            var htCost = handTrick.EnergyCost;
+            var htCostType = htCost.GetType();
+            AccessTools.Field(htCostType, "_base")?.SetValue(htCost, 0);
+            AccessTools.Field(htCostType, "<Canonical>k__BackingField")?.SetValue(htCost, 0);
+        }
+
         // Trash to Treasure 重做：3 费 Skill，添加 Exhaust 关键字
         var trashToTreasure = ModelDb.AllCards.OfType<TrashToTreasure>().FirstOrDefault();
         if (trashToTreasure != null)
@@ -288,6 +291,42 @@ public static class SynchronizeUpgradePatch
     {
         var kw = AccessTools.Field(typeof(CardModel), "_keywords")?.GetValue(__instance) as HashSet<CardKeyword>;
         kw?.Add(CardKeyword.Retain);
+    }
+}
+
+/// <summary>
+/// 遗忘仪式 (ForgottenRitual) 升级：
+///   - 原版 OnUpgrade 会调用 Energy.UpgradeValueBy(1)，即 Energy.BaseValue += 1（3→4）
+///   - Postfix 将其反向修正回 3，让升级后 Energy 保持不变
+///   - 同时从 _keywords 移除 Exhaust（控制行为：不再消耗）
+/// </summary>
+[HarmonyPatch(typeof(ForgottenRitual), "OnUpgrade")]
+public static class ForgottenRitualUpgradePatch
+{
+    [HarmonyPostfix]
+    static void FixUpgrade(ForgottenRitual __instance)
+    {
+        // 反向修正：原版 UpgradeValueBy(1) == BaseValue += 1，还原回 3
+        __instance.DynamicVars["Energy"].BaseValue -= 1m;
+
+        // 从 _keywords 移除 Exhaust（防止消耗行为触发）
+        var kw = AccessTools.Field(typeof(CardModel), "_keywords")?.GetValue(__instance) as HashSet<CardKeyword>;
+        kw?.Remove(CardKeyword.Exhaust);
+    }
+}
+
+/// <summary>
+/// 遗忘仪式升级后：CanonicalKeywords 过滤掉 Exhaust，使卡面不再显示消耗标签。
+/// （ForgottenRitual.get_CanonicalKeywords 直接 newobj 返回 Exhaust，不经过 _keywords，须单独 patch）
+/// </summary>
+[HarmonyPatch(typeof(ForgottenRitual), "get_CanonicalKeywords")]
+public static class ForgottenRitualCanonicalKeywordsPatch
+{
+    [HarmonyPostfix]
+    static void RemoveExhaustWhenUpgraded(ForgottenRitual __instance, ref IEnumerable<CardKeyword> __result)
+    {
+        if (__instance.IsUpgraded)
+            __result = __result.Where(k => k != CardKeyword.Exhaust);
     }
 }
 

@@ -72,7 +72,7 @@ dotnet build
 | **Go for the Eyes（瞄准眼睛）** | 伤害 3→4（升级后 4→6）|
 | **Blood Wall（血墙）** | 失去生命从 2 改为 1 |
 | **Not Yet（时候未到）** | 重做：1（升级后 0）费 Skill，Exhaust，消耗所有手牌并各抽 1 张 |
-| **Forgotten Ritual（遗忘仪式）** | 移除 Exhaust 关键字 |
+| **Forgotten Ritual（遗忘仪式）** | 升级版 - 移除 Exhaust 关键字，加4费变为加3费|
 
 #### 猎宝（Silent）
 
@@ -80,6 +80,7 @@ dotnet build
 |---|---|
 | **Acrobatics（杂技）** | 稀有度: Uncommon —> Common |
 | **Untouchable (触不可及)** | 获得格挡: 6(9) -> 9(11) |
+| **Hand Trick** | 重做为0费，弃一张牌，获得1费 ｜
 
 
 

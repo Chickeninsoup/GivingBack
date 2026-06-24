@@ -1,0 +1,77 @@
+# Changelog
+
+## [v0.2.0] - 2026-06-24
+
+### 新增 / Added
+
+- **Hand Trick（幻手）重做**：效果全面重做
+  - 费用改为 0
+  - 新效果：弃手牌中 1 张牌，获得 1 点能量
+  - 升级后：额外获得 Retain（保留）关键字
+
+### 改动 / Changed
+
+- **Forgotten Ritual（遗忘仪式）升级版**：
+  - 升级后移除 Exhaust（消耗）关键字
+  - 升级后额外费用从 +4 改为 +3（即升级后花费 3 费而非 4 费）
+
+- **描述文字修正**：
+  - Synchronize、Hand Trick 的描述现在正确显示能量水晶图标 UI（`{Energy:energyIcons()}`）
+  - Calamity 名称修正为 "Heal"
+  - NOT_YET 描述移除多余的消耗标签文本
+  - FTL 描述格式修正
+  - Silken Tress 遗物描述用词修正（华彩）
+
+---
+
+## [v0.1.0] - 2026-06-24
+
+### 初始版本 / Initial Release
+
+#### 卡牌改动
+
+**战士（Ironclad）**
+- Untouchable（无懈可击）：格挡 6→9（升级后 9→11）；稀有度→Common
+- Flame Barrier（火焰屏障）：格挡 12→16（升级后 16→20），反伤 4→6（升级后 6→8）
+- Stone Armor（石甲）：Plating 4→5
+- Spite（怨恨）：伤害 5→6（升级后 9），若本回合失去过生命则抽 1 张牌
+- Go for the Eyes（瞄准眼睛）：伤害 3→4（升级后 4→6）
+- Blood Wall（血墙）：失去生命从 2 改为 1
+- Not Yet（时候未到）：重做为 1（升级后 0）费 Skill，Exhaust，消耗所有手牌并各抽 1 张
+
+**猎宝（Silent）**
+- Acrobatics（杂技）：稀有度 Uncommon→Common
+- Untouchable（触不可及）：格挡 6(9)→9(11)
+
+**机宝（Defect）**
+- FTL：伤害 3→5（升级后 4→6）；首次打出时抽 1 张牌
+- Glacier（冰川）：格挡 6→9；注入 1 颗冰霜球（升级后 2 颗）
+- Hailstorm（冰雹暴）：重做为 1 费 Skill，造成 6 + 3×冰霜球数量点伤害
+- Helix Drill（螺旋钻）：重做，对手牌/抽牌堆/弃牌堆中每张状态牌造成 3（升级后 5）点伤害；稀有度→Uncommon
+- Synchronize（同步）：每有一个充能球获得 1 点能量；移除 Exhaust；升级后获得 Retain
+- Spinner（旋转器）：注入 1 颗玻璃法球；每回合开始注入 1 颗；升级后 0 费
+- Consuming Shadow（吞噬暗影）：生成 2 颗暗能法球；回合结束时触发最左和最右充能球被动
+- Coolant（冷却剂）：每当摸到状态牌，抽 1 张牌
+- Feral（野性）：2（升级后 1）费；获得 2 点专注，失去 1 个法球槽位
+- Iteration（迭代）：打出能力牌时抽 1 张牌；升级后 0 费
+- Smokestack（烟囱）：每回合首次摸到状态牌时抽 2 张牌
+- Trash to Treasure（变废为宝）：重做为 4 费 Skill，Exhaust；将所有状态牌变形为 Fuel
+- Scavenge（内存清理）：消耗手牌中 1 张，获得等同于其费用的能量；升级后 0 费
+
+**君君（Regent）**
+- Glow（发光）：获得 1（升级后 2）颗星，抽 2 张牌
+
+**通用**
+- Calamity：重做为治疗牌，回复 10（升级后 13）点生命值，Exhaust
+
+#### 遗物改动
+- Silken Tress（丝滑发丝）：首个卡牌奖励可刷新一次
+- Nutritious Oyster（美味蛤蜊）：提升生命上限 11→22
+
+#### 敌人改动
+- Aeonglass Boss Wither 机制重做
+- Infested Prism 行为重做
+
+#### 其他
+- 商人删牌价格：A10 改为 75+25n
+- 地图生成：问号出现普通战斗概率增加到 20%，每层最多出现一次

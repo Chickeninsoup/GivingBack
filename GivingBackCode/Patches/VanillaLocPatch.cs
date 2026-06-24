@@ -47,17 +47,17 @@ public static class VanillaLocPatch
         dict["BLOOD_WALL.description"] = "获得 {Block:diff()} 点格挡。失去1点生命值。";
 
         // Not Yet：新效果描述
-        dict["NOT_YET.description"] = "消耗手牌中所有牌。每消耗一张牌，抽1张牌。[gold]消耗[/gold]。";
+        dict["NOT_YET.description"] = "消耗手牌中所有牌。每消耗一张牌，抽1张牌。";
 
         // Glow：获得 1 颗星（升级后 2 颗），抽 2 张牌
         dict["GLOW.description"] = "获得 {Stars:starIcons()}，抽2张牌。";
 
         // Calamity 重做为 Not Yet：治疗 10（升级后 13）点生命值，Exhaust
-        dict["CALAMITY.name"] = "Not Yet";
+        dict["CALAMITY.name"] = "Heal";
         dict["CALAMITY.description"] = "回复 10(13) 点生命值。\n[gold]消耗[/gold]。";
 
         // FTL：Deal 5(6) damage. 首次打出摸 1 牌
-        dict["FTL.description"] = "造成 {Damage:diff()} 点伤害。\n若这是本场战斗首次打出此牌，抽1 张牌。";
+        dict["FTL.description"] = "造成 {Damage:diff()}点伤害。\n若这是本场战斗首次打出此牌，抽1张牌。";
 
         // Hailstorm 重做：1 费 Skill，对敌人造成 6 + 3×冰霜球数量 伤害（实时显示）
         dict["HAILSTORM.description"] = "造成 {CalculatedDamage} 点伤害。\n(基础6，每颗[gold]冰霜[/gold]球额外 +{ExtraDamage:diff()} 点)";
@@ -81,7 +81,7 @@ public static class VanillaLocPatch
         dict["SPINNER.description"] = "生成1颗[gold]玻璃[/gold]充能球。\n在你的回合开始时，生成1颗[gold]玻璃[/gold]充能球。";
 
         // Synchronize 修改：每有一个充能球获得 1 点能量
-        dict["SYNCHRONIZE.description"] = "每有一个[gold]充能球[/gold]，获得1点能量。";
+        dict["SYNCHRONIZE.description"] = "每有一个[gold]充能球[/gold]，获得{Energy:energyIcons()}。";
 
         // Smokestack 重做：每回合首次摸到状态牌时摸 2(3) 张牌
         dict["SMOKESTACK.description"] = "每回合首次摸到[gold]状态[/gold]牌时，抽2张牌。";
@@ -100,6 +100,10 @@ public static class VanillaLocPatch
         // Consuming Shadow 修改：触发被动效果而非激活
         dict["CONSUMING_SHADOW.description"] = "[gold]生成[/gold]2颗[gold]黑暗[/gold]充能球。在你的回合结束时，触发最左边和最右边充能球的被动能力。";
 
+        // Hand Trick 重做：弃1张手牌，获得1点能量（升级后获得保留）
+        dict["HAND_TRICK.description"] = "丢弃手牌中1张牌，获得{Energy:energyIcons()}。";
+        dict["HAND_TRICK+.description"] = "丢弃手牌中1张牌，获得{Energy:energyIcons()}。";
+
         // ── 在此添加你的卡牌描述修改 ────────────────────────────
     }
 
@@ -116,7 +120,7 @@ public static class VanillaLocPatch
         // dict["burning_blood.flavor"] = "烈火淬炼，永不屈服。";
 
         // 丝滑发丝 (Silken Tress): 添加首个卡牌奖励可刷新一次
-        dict["SILKEN_TRESS.description"] = "获得时，失去所有[gold]金币[/gold]。[gold]附魔[/gold]首个卡牌奖励中的所有卡牌（[purple]魅力[/purple]）。\n首个卡牌奖励可以刷新一次。";
+        dict["SILKEN_TRESS.description"] = "获得时，失去所有[gold]金币[/gold]。[gold]附魔[/gold]首个卡牌奖励中的所有卡牌（[purple]华彩[/purple]）。\n首个卡牌奖励可以刷新一次。";
 
         // ── 在此添加你的遗物描述修改 ────────────────────────────
     }

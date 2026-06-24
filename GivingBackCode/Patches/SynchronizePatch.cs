@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models.Cards;
 
 namespace GivingBack.GivingBackCode.Patches;
@@ -33,5 +35,18 @@ public static class SynchronizeOnPlayPatch
         if (orbCount > 0)
             await PlayerCmd.GainEnergy((decimal)orbCount, player);
 
+    }
+}
+
+/// <summary>
+/// 为 Synchronize 添加 EnergyVar(1)，使描述中的 {Energy:energyIcons()} 能正确渲染。
+/// </summary>
+[HarmonyPatch(typeof(Synchronize), "get_CanonicalVars")]
+public static class SynchronizeCanonicalVarsPatch
+{
+    [HarmonyPostfix]
+    static void AddEnergyVar(ref IEnumerable<DynamicVar> __result)
+    {
+        __result = __result.Append(new EnergyVar(1));
     }
 }
