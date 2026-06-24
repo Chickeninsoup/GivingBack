@@ -349,10 +349,11 @@ public static class ForgottenRitualCanonicalKeywordsPatch
 public static class CalculatedGambleUpgradePatch
 {
     [HarmonyPostfix]
-    static void RemoveRetain(CalculatedGamble __instance)
+    static void RemoveRetainAndExhaust(CalculatedGamble __instance)
     {
         var kw = AccessTools.Field(typeof(CardModel), "_keywords")?.GetValue(__instance) as HashSet<CardKeyword>;
         kw?.Remove(CardKeyword.Retain);
+        kw?.Remove(CardKeyword.Exhaust);
     }
 }
 
