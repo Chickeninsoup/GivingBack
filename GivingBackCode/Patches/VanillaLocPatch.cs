@@ -104,6 +104,11 @@ public static class VanillaLocPatch
         dict["HAND_TRICK.description"] = "丢弃手牌中1张牌，获得{Energy:energyIcons()}。";
         dict["HAND_TRICK+.description"] = "丢弃手牌中1张牌，获得{Energy:energyIcons()}。";
 
+        // Calculated Gamble 修改：覆盖 base key（中文原文内嵌了"消耗。"文本，英文版无此行）
+        // 去掉描述里的"消耗。"——Exhaust 由关键字系统另行显示，升级后由 patch 移除
+        dict["CALCULATED_GAMBLE.description"] = "丢弃你的[gold]手牌[/gold]，\n然后抽同等数量的牌。";
+        dict["CALCULATED_GAMBLE+.description"] = "丢弃你的[gold]手牌[/gold]，\n然后抽同等数量的牌。";
+
         // ── 在此添加你的卡牌描述修改 ────────────────────────────
     }
 

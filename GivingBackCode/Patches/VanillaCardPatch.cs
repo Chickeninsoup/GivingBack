@@ -219,6 +219,16 @@ public static class VanillaCardPatch
             AccessTools.Field(htCostType, "<Canonical>k__BackingField")?.SetValue(htCost, 0);
         }
 
+        // Calculated Gamble：费用 0→1
+        var calculatedGamble = ModelDb.AllCards.OfType<CalculatedGamble>().FirstOrDefault();
+        if (calculatedGamble != null)
+        {
+            var cgCost = calculatedGamble.EnergyCost;
+            var cgCostType = cgCost.GetType();
+            AccessTools.Field(cgCostType, "_base")?.SetValue(cgCost, 1);
+            AccessTools.Field(cgCostType, "<Canonical>k__BackingField")?.SetValue(cgCost, 1);
+        }
+
         // Trash to Treasure 重做：3 费 Skill，添加 Exhaust 关键字
         var trashToTreasure = ModelDb.AllCards.OfType<TrashToTreasure>().FirstOrDefault();
         if (trashToTreasure != null)
@@ -324,6 +334,33 @@ public static class ForgottenRitualCanonicalKeywordsPatch
 {
     [HarmonyPostfix]
     static void RemoveExhaustWhenUpgraded(ForgottenRitual __instance, ref IEnumerable<CardKeyword> __result)
+    {
+        if (__instance.IsUpgraded)
+            __result = __result.Where(k => k != CardKeyword.Exhaust);
+    }
+}
+
+/// <summary>
+/// Calculated Gamble 升级：
+///   原版 OnUpgrade 调用 AddKeyword(Retain)，Postfix 将其撤销。
+///   get_CanonicalKeywords 硬编码 Exhaust，由下方 patch 在升级后过滤。
+/// </summary>
+[HarmonyPatch(typeof(CalculatedGamble), "OnUpgrade")]
+public static class CalculatedGambleUpgradePatch
+{
+    [HarmonyPostfix]
+    static void RemoveRetain(CalculatedGamble __instance)
+    {
+        var kw = AccessTools.Field(typeof(CardModel), "_keywords")?.GetValue(__instance) as HashSet<CardKeyword>;
+        kw?.Remove(CardKeyword.Retain);
+    }
+}
+
+[HarmonyPatch(typeof(CalculatedGamble), "get_CanonicalKeywords")]
+public static class CalculatedGambleCanonicalKeywordsPatch
+{
+    [HarmonyPostfix]
+    static void RemoveExhaustWhenUpgraded(CalculatedGamble __instance, ref IEnumerable<CardKeyword> __result)
     {
         if (__instance.IsUpgraded)
             __result = __result.Where(k => k != CardKeyword.Exhaust);
