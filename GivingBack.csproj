@@ -15,6 +15,7 @@
         <!-- Diasble architecture mismatch warning; mods are ideally built for all platforms (MSIL)
              while your local StS2 version will be for your specific platform. -->
         <NoWarn>$(NoWarn);MSB3270</NoWarn>
+        <Version>0.2.3</Version>
     </PropertyGroup>
 
     <ItemGroup Condition="Exists('$(Sts2DataDir)')">
@@ -66,6 +67,20 @@
       <Folder Include="GivingBack\images\relics\big\" />
     </ItemGroup>
     
+    <Target Name="UpdateManifestVersion" BeforeTargets="BeforeBuild">
+        <PropertyGroup>
+            <ManifestPath>$(MSBuildProjectName).json</ManifestPath>
+            <OldContent>$([System.IO.File]::ReadAllText($(ManifestPath)))</OldContent>
+            <NewContent>$([System.Text.RegularExpressions.Regex]::Replace($(OldContent), '("version":\s*")[^"]*', '$1v$(Version)'))</NewContent>
+        </PropertyGroup>
+        <WriteLinesToFile
+            Condition="'$(OldContent)' != '$(NewContent)'"
+            File="$(ManifestPath)"
+            Lines="$(NewContent)"
+            Overwrite="true"
+            Encoding="UTF-8" />
+    </Target>
+
     <Target Name="CheckDependencyPaths">
         <Error Text=" Slay the Spire 2 data not found at path '$(Sts2DataDir)'" Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')" />
     </Target>

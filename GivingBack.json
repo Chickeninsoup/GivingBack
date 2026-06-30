@@ -3,7 +3,7 @@
   "name": "GivingBack",
   "author": "hukaikun",
   "description": "Slay the Spire 2 vanilla card and relic modifier",
-  "version": "v0.1.0",
+  "version": "v0.2.3",
   "has_pck": false,
   "has_dll": true,
   "dependencies": [{"id": "BaseLib", "min_version": "v3.0.0"}],
