@@ -85,6 +85,10 @@ public static class VanillaLocPatch
 
         // Smokestack 重做：每回合首次摸到状态牌时摸 2(3) 张牌
         dict["SMOKESTACK.description"] = "每回合首次摸到[gold]状态[/gold]牌时，抽2张牌。";
+        dict["SMOKESTACK+.description"] = "每回合首次摸到[gold]状态[/gold]牌时，抽3张牌。";
+
+        // Hotfix 修改：移除消耗；升级后变为本回合获得 3 点集中
+        dict["HOTFIX+.description"] = "本回合获得3点[gold]集中[/gold]。";
 
         // Iteration 修改：打出能力牌时摸 1 张牌，升级后 0 费
         dict["ITERATION.description"] = "每当你打出[gold]能力[/gold]牌，抽1张牌。";
@@ -92,10 +96,6 @@ public static class VanillaLocPatch
         // Trash to Treasure 重做：3 费 Skill，Exhaust，将手牌/牌库/弃牌堆状态牌变形为 Fuel（升级后保留）
         dict["TRASH_TO_TREASURE.description"] = "将手牌、牌库和弃牌堆中所有[gold]状态[/gold]牌[gold]变化[/gold]为[gold]燃料[/gold]。";
         dict["TRASH_TO_TREASURE+.description"] = "将手牌、牌库和弃牌堆中所有[gold]状态[/gold]牌[gold]变化[/gold]为[gold]燃料+[/gold]。";
-
-        // Glacier 修改：9 格挡 + 注入 1 颗冰霜法球（升级后 2 颗），描述随升级状态实时切换
-        dict["GLACIER.description"] = "获得 {Block} 点格挡。注入 1 颗[gold]冰霜[/gold]法球。";
-        dict["GLACIER+.description"] = "获得 {Block} 点格挡。注入 2 颗[gold]冰霜[/gold]法球。";
 
         // Consuming Shadow 修改：触发被动效果而非激活
         dict["CONSUMING_SHADOW.description"] = "[gold]生成[/gold]2颗[gold]黑暗[/gold]充能球。在你的回合结束时，触发最左边和最右边充能球的被动能力。";

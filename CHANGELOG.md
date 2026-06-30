@@ -1,5 +1,20 @@
 # Changelog
 
+## [v0.2.3] - 2026-06-30
+
+### 修复 / Fixed
+
+- **Synchronize（同步）**：修复未升级版本显示消耗词条的问题（`get_CanonicalKeywords` 硬编码导致）
+- **Hotfix**：移除原版 Exhaust 关键字
+
+### 改动 / Changed
+
+- **Hotfix** 升级效果重做：升级后效果变为本回合获得 3 点[gold]集中[/gold]（`TemporaryFocusPower`）
+- **Smokestack+** 描述补全：升级后每回合首次摸到状态牌时抽 3 张牌（原逻辑已支持，补全显示文本）
+- **Glacier** 重做已移除，恢复原版行为
+
+---
+
 ## [v0.2.2] - 2026-06-30
 
 ### 修复 / Fixed

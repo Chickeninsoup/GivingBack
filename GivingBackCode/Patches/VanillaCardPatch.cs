@@ -94,23 +94,6 @@ public static class VanillaCardPatch
         if (ftl != null)
             ftl.DynamicVars["Damage"].BaseValue = 5m;
 
-        // 冰川 (Glacier) Block 6->9；注入 Repeat DynamicVar 供 {Repeat:diff()} 显示法球数量
-        var glacier = ModelDb.AllCards.OfType<Glacier>().FirstOrDefault();
-        if (glacier != null)
-        {
-            glacier.DynamicVars["Block"].BaseValue = 9m;
-
-            // 将 RepeatVar 注入描述 LocString，使 {Repeat:diff()} 能正常替换
-            var orbCountVar = new RepeatVar("Repeat", 1);
-            orbCountVar.UpgradeValueBy(1m); // 升级后：1 + 1 = 2
-            glacier.Description.Add(orbCountVar);
-
-            // 同时存入 _vars，以便 GlacierUpgradePatch 直接通过 DynamicVars["Repeat"] 访问
-            var glacierVars = AccessTools.Field(glacier.DynamicVars.GetType(), "_vars")
-                              ?.GetValue(glacier.DynamicVars) as Dictionary<string, DynamicVar>;
-            glacierVars?.TryAdd("Repeat", orbCountVar);
-        }
-
         // Calamity 重做为 Not Yet：Type -> Skill，添加 Exhaust，费用改为 1
         var calamity = ModelDb.AllCards.OfType<Calamity>().FirstOrDefault();
         if (calamity != null)
@@ -201,6 +184,14 @@ public static class VanillaCardPatch
             CardRarityField.SetValue(helixDrill, uncommon);
         }
 
+        // Hotfix：移除原版 Exhaust 关键字（升级后效果由 HotfixUpgradedOnPlayPatch 替换）
+        var hotfix = ModelDb.AllCards.OfType<Hotfix>().FirstOrDefault();
+        if (hotfix != null)
+        {
+            var hotfixKw = AccessTools.Field(typeof(CardModel), "_keywords")?.GetValue(hotfix) as HashSet<CardKeyword>;
+            hotfixKw?.Remove(CardKeyword.Exhaust);
+        }
+
         // Synchronize：移除原版 Exhaust 关键字（升级后添加 Retain，由 SynchronizeUpgradePatch 处理）
         var synchronize = ModelDb.AllCards.OfType<Synchronize>().FirstOrDefault();
         if (synchronize != null)
@@ -289,6 +280,20 @@ public static class ProductionUpgradePatch
         var keywordsField = AccessTools.Field(typeof(CardModel), "_keywords");
         var keywords = keywordsField?.GetValue(__instance) as HashSet<CardKeyword>;
         keywords?.Remove(CardKeyword.Exhaust);
+    }
+}
+
+/// <summary>
+/// Synchronize.get_CanonicalKeywords 可能硬编码了 Exhaust（同 ForgottenRitual 模式）。
+/// 始终过滤掉 Exhaust，确保未升级版本卡面不显示消耗标签。
+/// </summary>
+[HarmonyPatch(typeof(Synchronize), "get_CanonicalKeywords")]
+public static class SynchronizeCanonicalKeywordsPatch
+{
+    [HarmonyPostfix]
+    static void RemoveExhaust(ref IEnumerable<CardKeyword> __result)
+    {
+        __result = __result.Where(k => k != CardKeyword.Exhaust);
     }
 }
 
