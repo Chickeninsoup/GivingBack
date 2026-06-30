@@ -34,11 +34,11 @@ internal static class UnknownMonsterTracker
 public static class MapCreateResetPatch
 {
     [HarmonyPrefix]
-    static void ResetMonsterFlag(RunManager __instance)
+    static void ResetMonsterFlag()
     {
-        var runState = __instance.State;
-        if (runState != null)
-            UnknownMonsterTracker.ResetForMap(runState);
+        var rs = RunManager.Instance?.State;
+        if (rs != null)
+            UnknownMonsterTracker.ResetForMap(rs);
     }
 }
 
@@ -49,19 +49,21 @@ public static class UnknownMapPointRollPatch
 {
     // Prefix：将怪物概率设为 20%；若本层已出现过怪物则归零
     [HarmonyPrefix]
-    static void SetMonsterOdds(UnknownMapPointOdds __instance, RunState runState)
+    static void SetMonsterOdds(UnknownMapPointOdds __instance)
     {
-        if (runState == null) return;
-        bool alreadyFought = UnknownMonsterTracker.Get(runState).MonsterFoughtThisMap;
+        var rs = RunManager.Instance?.State;
+        if (rs == null) return;
+        bool alreadyFought = UnknownMonsterTracker.Get(rs).MonsterFoughtThisMap;
         __instance.SetBaseOdds(RoomType.Monster, alreadyFought ? 0f : 0.2f);
     }
 
     // Postfix：若结果为怪物，标记本层已触发战斗
     [HarmonyPostfix]
-    static void TrackMonsterRoll(RoomType __result, RunState runState)
+    static void TrackMonsterRoll(RoomType __result)
     {
-        if (runState == null) return;
+        var rs = RunManager.Instance?.State;
+        if (rs == null) return;
         if (__result == RoomType.Monster)
-            UnknownMonsterTracker.Get(runState).MonsterFoughtThisMap = true;
+            UnknownMonsterTracker.Get(rs).MonsterFoughtThisMap = true;
     }
 }

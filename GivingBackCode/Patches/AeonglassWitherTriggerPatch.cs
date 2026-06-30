@@ -13,6 +13,8 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves;
+using MegaCrit.Sts2.Core.Random;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace GivingBack.GivingBackCode.Patches;
 
@@ -37,7 +39,7 @@ internal static class WitherTotalTracker
 /// 战斗开始时，向抽牌堆底部塞入 floor(卡组大小 / 5) 张 Wither。
 /// 以 AbstractModel.BeforeCombatStart 为入口，仅在 WitheringPresencePower 实例上触发。
 /// </summary>
-[HarmonyPatch(typeof(AbstractModel), "BeforeCombatStart")]
+[HarmonyPatch(typeof(AbstractModel), "BeforeCombatStartLate")]
 public static class AeonglassCombatStartWitherPatch
 {
     static void Postfix(AbstractModel __instance, ref Task __result)
@@ -54,16 +56,46 @@ public static class AeonglassCombatStartWitherPatch
         __result = AddWithers(prev, power, count);
     }
 
+    private static readonly FieldInfo CardPileCardsField =
+        AccessTools.Field(typeof(CardPile), "_cards");
+    private static readonly FieldInfo CardPileContentsChangedField =
+        AccessTools.Field(typeof(CardPile), "ContentsChanged");
+
     static async Task AddWithers(Task prev, WitheringPresencePower power, int count)
     {
         await prev;
+
+        // 先塞入底部（保证动画正常播放）
         await CardPileCmd.AddToCombatAndPreview<Wither>(
             power.Target, PileType.Draw, count, (Player?)null, CardPilePosition.Bottom);
         power.Flash();
 
-        // 记录开局 Wither 总数，供强化回合补全使用
-        if (power.Target.Player != null)
-            WitherTotalTracker.SetTotal(power.Target.Player, count);
+        var player = power.Target.Player;
+        if (player != null)
+        {
+            WitherTotalTracker.SetTotal(player, count);
+
+            // 用游戏种子构造确定性 RNG，将底部 Wither 随机插入牌库
+            var seed = RunManager.Instance?.State?.Rng?.Seed ?? 0u;
+            var rng = new Rng(seed ^ 0xC0FFEE42u, 0);
+
+            var drawPile = CardPile.Get(PileType.Draw, player);
+            if (drawPile != null && CardPileCardsField.GetValue(drawPile) is List<CardModel> cards)
+            {
+                // Wither 刚被加到末尾，逐一取出并插入种子随机位置
+                for (int i = 0; i < count; i++)
+                {
+                    int lastIdx = cards.Count - 1;
+                    var wither = cards[lastIdx];
+                    cards.RemoveAt(lastIdx);
+                    int pos = rng.NextInt(0, cards.Count + 1);
+                    cards.Insert(pos, wither);
+                }
+
+                // 通知 UI 牌库顺序已变
+                (CardPileContentsChangedField.GetValue(drawPile) as Action)?.Invoke();
+            }
+        }
     }
 }
 
@@ -216,32 +248,3 @@ public static class AeonglassIncreasingIntensityPatch
     }
 }
 
-/// <summary>
-/// 第 1、4、7、10…回合（玩家回合开始时），将弃牌堆中所有 Wither 随机洗回抽牌堆。
-/// 条件：(TurnNumber - 1) % 3 == 0
-/// </summary>
-[HarmonyPatch(typeof(AbstractModel), "AfterPlayerTurnStart")]
-public static class AeonglassDiscardShufflePatch
-{
-    static void Postfix(AbstractModel __instance, PlayerChoiceContext choiceContext, Player player, ref Task __result)
-    {
-        if (__instance is not Aeonglass) return;
-
-        var turnNumber = player.PlayerCombatState?.TurnNumber ?? 0;
-        if ((turnNumber - 1) % 3 != 0) return;
-
-        var prev = __result;
-        __result = ShuffleWithersFromDiscard(prev, player);
-    }
-
-    static async Task ShuffleWithersFromDiscard(Task prev, Player player)
-    {
-        await prev;
-
-        var discard = CardPile.Get(PileType.Discard, player);
-        if (discard == null) return;
-
-        foreach (var wither in discard.Cards.OfType<Wither>().ToList())
-            await CardPileCmd.Add(wither, PileType.Draw, CardPilePosition.Random, null, false);
-    }
-}

@@ -30,14 +30,17 @@ public static class HandTrickOnPlayPatch
     {
         var player = instance.Owner!;
 
-        var card = await CommonActions.SelectSingleCard(
-            instance,
-            new LocString("cards", "HAND_TRICK"),
-            choiceContext,
-            PileType.Hand);
-        if (card == null) return;
-
-        await CardCmd.Discard(choiceContext, card);
+        var hand = player.PlayerCombatState?.Hand;
+        if (hand != null && !hand.IsEmpty)
+        {
+            var card = await CommonActions.SelectSingleCard(
+                instance,
+                new LocString("cards", "HAND_TRICK"),
+                choiceContext,
+                PileType.Hand);
+            if (card != null)
+                await CardCmd.Discard(choiceContext, card);
+        }
 
         await PlayerCmd.GainEnergy(1m, player);
     }

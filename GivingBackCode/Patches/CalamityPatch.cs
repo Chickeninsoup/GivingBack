@@ -1,3 +1,4 @@
+using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -42,5 +43,27 @@ public static class CalamityOnUpgradePatch
     {
         __instance.EnergyCost.FinalizeUpgrade();
         return false;
+    }
+}
+
+/// <summary>
+/// 强制 Calamity 打出后送入消耗堆。
+/// 原版可能覆盖了 GetResultPileType* 并硬编码返回弃牌堆，
+/// 或 _keywords 中的 CardKeyword.Exhaust 未被该方法读取。
+/// 参考 BaseLib ExhaustivePatch：Postfix CardModel.GetResultPileTypeForCardPlay（或 GetResultPileType）。
+/// </summary>
+[HarmonyPatch(typeof(CardModel))]
+public static class CalamityExhaustResultPilePatch
+{
+    static MethodBase TargetMethod()
+    {
+        return AccessTools.DeclaredMethod(typeof(CardModel), "GetResultPileTypeForCardPlay")
+            ?? AccessTools.DeclaredMethod(typeof(CardModel), "GetResultPileType");
+    }
+
+    static void Postfix(CardModel __instance, ref PileType __result)
+    {
+        if (__instance is Calamity)
+            __result = PileType.Exhaust;
     }
 }

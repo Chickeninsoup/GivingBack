@@ -1,5 +1,36 @@
 # Changelog
 
+## [v0.2.2] - 2026-06-30
+
+### 修复 / Fixed
+
+- **Aeonglass Wither 机制重做**：
+  - 战斗开始钩子从 `BeforeCombatStart` 改为 `BeforeCombatStartLate`，修正动画时序问题
+  - Wither 加入抽牌堆底后，现在使用游戏种子构造的确定性 RNG 将其随机插入整个牌库，而非固定堆底
+  - 移除了原来每 3 回合将弃牌堆 Wither 洗回抽牌堆的逻辑（`AeonglassDiscardShufflePatch`）
+
+- **Calamity**：修复打出后未进消耗堆的问题（新增 `GetResultPileTypeForCardPlay` Postfix，强制返回 `PileType.Exhaust`）
+
+- **Hand Trick（手上技法）**：修复手牌为空时仍弹出选牌界面的问题；现在手牌非空才会触发选牌
+
+- **Iteration（迭代）**：将触发钩子从 `AbstractModel.AfterCardPlayed` 改为 `Hook.AfterCardPlayed`，确保回响形态（Echo Form）重打能力牌时也能正确摸牌
+
+- **MapGenerationPatch**：将参数注入改为 `RunManager.Instance?.State` 直接访问，修复注入失败导致补丁不生效的问题
+
+### 新增 / Added
+
+- **SubroutinePower 回响兼容**（`SubroutinePowerEchoFormPatch`）：使 Subroutine 在 Echo Form 重打技能牌时也能正常给费
+
+---
+
+## [v0.2.1] - 2026-06-24
+
+### 修复 / Fixed
+
+- **Calculated Gamble（计算下注）升级版**：修复升级时未能同时移除 `_keywords` 中 Exhaust 词条的问题
+
+---
+
 ## [v0.2.0] - 2026-06-24
 
 ### 新增 / Added

@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -17,11 +18,10 @@ namespace GivingBack.GivingBackCode.Patches;
 ///   每当你打出能力牌，摸 1 张牌。
 ///   升级后：0 费。
 ///
-/// 实现参考 Subroutine（SubroutinePower.AfterCardPlayed 机制）：
+/// 实现：
 ///   - Iteration.OnPlay → Apply IterationPower
 ///   - IterationPower.AfterCardDrawn → 替换为 no-op（去除原版"摸牌时摸牌"效果）
-///   - AbstractModel.AfterCardPlayed 中过滤 IterationPower 实例，
-///     打出能力牌时触发摸 1 张牌。
+///   - Hook.AfterCardPlayed Postfix → 打出能力牌时触发摸 1 张牌（含回响重打）
 /// </summary>
 [HarmonyPatch(typeof(Iteration), "OnPlay")]
 public static class IterationOnPlayPatch
@@ -53,20 +53,25 @@ public static class IterationPowerDrawSuppressPatch
 }
 
 /// <summary>
-/// IterationPower 在任意能力牌打出时摸 1 张牌（同 SubroutinePower.AfterCardPlayed 机制）。
+/// IterationPower 在任意能力牌打出时摸 1 张牌。
+///
+/// 改用 Hook.AfterCardPlayed（全局分发层）而非 AbstractModel.AfterCardPlayed，
+/// 确保游戏即使只对有显式重写的类调用单个模型钩子，
+/// 回响形态的重打也能照常触发摸牌。
 /// </summary>
-[HarmonyPatch(typeof(AbstractModel), "AfterCardPlayed")]
+[HarmonyPatch(typeof(Hook), "AfterCardPlayed")]
 public static class IterationAfterCardPlayedPatch
 {
-    static void Postfix(AbstractModel __instance, ref Task __result,
-        PlayerChoiceContext choiceContext, CardPlay cardPlay)
+    static void Postfix(ref Task __result, PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        if (__instance is not IterationPower iterPower) return;
         if (cardPlay.Card.Type != CardType.Power) return;
         if (cardPlay.Card is Iteration) return;  // 避免 Iteration 自身触发
 
-        var player = iterPower.Owner?.Player;
+        var player = cardPlay.Card.Owner;
         if (player == null) return;
+
+        var iterPower = player.Creature.Powers.OfType<IterationPower>().FirstOrDefault();
+        if (iterPower == null) return;
 
         var prev = __result;
         __result = DrawCard(prev, choiceContext, player);
